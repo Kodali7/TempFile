@@ -8,9 +8,12 @@
     "default_icon": "assets/main.png"
   },
   "permissions":[
-    "downloads"
+    "downloads",
+    "storage",
+    "alarms",
+    "notifications"
   ],
   "background": {
-    "service_worker": "popup.js"
+    "service_worker": "background.js"
   }
 }
