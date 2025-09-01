@@ -66,13 +66,14 @@ async function handleDownloads(downloadItem) {
   console.log("File URL: " + downloadItem.finalUrl);
   console.log("File name: " + downloadItem.filename);
   if (!downloadItem.filename){
-    var filename = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    var filename = Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + ".bin";
   };
   
   chrome.downloads.download({
     //temp switch before to avoid infinite download loop
     url: downloadItem.finalUrl,
     filename: "temp/here/" + filename,
+    conflictAction: "uniquify"
   });
 }
 
