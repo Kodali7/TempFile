@@ -1,25 +1,20 @@
+const holder = {};
 chrome.downloads.onCreated.addListener(function (downloadItem) {
   console.log("Download Intercepted");
-  const holder = {};
 
-  if (downloadItem.id in holder){ //initialize count (should max be 1 but jic)
-    holder[downloadItem.id]+=1;
+  if (!(downloadItem.finalUrl in holder)){ //initialize count (should max be 1 but jic)
+    holder[downloadItem.finalUrl]=1;
   }
   else{
-    holder[downloadItem.id]=0;
+    return; //already took care of this specific downlaod
   }
 
   chrome.downloads.cancel(downloadItem.id, () => {
+    if (downloadItem.byExtensionId in holder){return}
     chrome.storage.local.get(["key"]).then((result) => { //need to work on proper condition to not trigger addListener infinitely
       if (result.key === "ON") {
         console.log("Download condition met");
-        
-        if (!(downloadItem.filename.includes("temp/here"))){
-          handleDownloads(downloadItem);
-        }
-      }
-      else if (result.key === "DOWNLOAD"){
-        console.log("Downloading...");
+        handleDownloads(downloadItem);
       }
     });
   }); //cancel the original download
@@ -58,6 +53,5 @@ function handleDownloads(downloadItem) {
   chrome.downloads.download({ //temp switch before to avoid infinite download loop
     url: downloadItem.finalUrl,
     filename: "temp/here" + downloadItem.filename,
-    body: String(downloadItem.id)
   });
 }
