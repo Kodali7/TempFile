@@ -11,6 +11,7 @@ toggleButton.addEventListener("change", function() {
   } else { //return to downloading normally
       console.log("Switch is OFF");
       value = "OFF";
+      chrome.storage.local.set({holder: {}})
   }
   chrome.storage.local
     .set({ key: value })
@@ -38,14 +39,5 @@ async function createTimer(){
   await chrome.alarms.create("Timer", {
     delayInMinutes: 10,
   });
-  // chrome.notifications.create(
-  // {
-  //   type: 'basic',
-  //   iconUrl: 'assets/main.png', 
-  //   title: 'Warning',
-  //   message: 'This downloaded item is stored in temp folder for later deletion',
-  //   contextMessage: "10-min timer created"
-  // },
-  // )
   console.log("Timer function completed");
 }

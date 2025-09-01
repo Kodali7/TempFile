@@ -1,17 +1,30 @@
-const holder = {};
+var holder = {};
+(async () => {
+  holder = await getHolder();
+})();
+
 chrome.downloads.onCreated.addListener(function (downloadItem) {
   console.log("Download Intercepted");
 
-  if (!(downloadItem.finalUrl in holder)){ //initialize count (should max be 1 but jic)
+  if (!(downloadItem.finalUrl in holder)) {
+
     holder[downloadItem.finalUrl]=1;
-  }
-  else{
+    chrome.storage.local.set({ holder: holder });
+  } else {
+    console.log("Already handled");
+    holder[downloadItem.finalUrl]+=1;
     return; //already took care of this specific downlaod
   }
-
+  console.log("Cancelling...");
   chrome.downloads.cancel(downloadItem.id, () => {
-    if (downloadItem.byExtensionId in holder){return}
-    chrome.storage.local.get(["key"]).then((result) => { //need to work on proper condition to not trigger addListener infinitely
+    console.log("HOLDER:");
+    console.log(holder);
+    if (holder[downloadItem.finalUrl]>1) {
+      return;
+    }
+    console.log("Logic executing...");
+    chrome.storage.local.get(["key"]).then((result) => {
+      //need to work on proper condition to not trigger addListener infinitely
       if (result.key === "ON") {
         console.log("Download condition met");
         handleDownloads(downloadItem);
@@ -25,7 +38,7 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
   chrome.storage.local.get(["key"]).then((result) => {
     condition = result.key;
   });
-  
+
   if (
     downloadDelta.state &&
     downloadDelta.state.current === "complete" &&
@@ -35,23 +48,39 @@ chrome.downloads.onChanged.addListener(function (downloadDelta) {
   }
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => { //if timer is done set everything off
+chrome.alarms.onAlarm.addListener((alarm) => {
+  //if timer is done set everything off
   chrome.storage.local
     .set({ key: value })
     .then(() => {
       console.log("Session " + value + " saved");
+      holder = {}; //reset the holder
     })
     .catch((error) => {
       console.error("Error with alarm:", error);
     });
 });
 
-function handleDownloads(downloadItem) {
+async function handleDownloads(downloadItem) {
   console.log("Handling download now");
   console.log("File URL: " + downloadItem.finalUrl);
-
-  chrome.downloads.download({ //temp switch before to avoid infinite download loop
+  console.log("File name: " + downloadItem.filename);
+  if (!downloadItem.filename){
+    var filename = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  };
+  
+  chrome.downloads.download({
+    //temp switch before to avoid infinite download loop
     url: downloadItem.finalUrl,
-    filename: "temp/here" + downloadItem.filename,
+    filename: "temp/here/" + filename,
+  });
+}
+
+function getHolder() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["holder"], (result) => {
+      const holderArray = result.holder || {};
+      resolve(holderArray);
+    });
   });
 }
