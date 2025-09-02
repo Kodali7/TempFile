@@ -4,6 +4,17 @@ var holder = {};
 })();
 
 chrome.downloads.onCreated.addListener(function (downloadItem) {
+  var condition;
+  chrome.storage.local.get(["key"]).then((result) => {
+    condition = result.key;
+    if (condition == "OFF") {
+      return;
+    }
+  });
+  if (downloadItem.byExtensionId === chrome.runtime.id) {
+    return;
+  }
+
   console.log("Download Intercepted");
 
   if (!(downloadItem.finalUrl in holder)) {
@@ -28,6 +39,9 @@ chrome.downloads.onCreated.addListener(function (downloadItem) {
       if (result.key === "ON") {
         console.log("Download condition met");
         handleDownloads(downloadItem);
+      } 
+      else {
+        return;
       }
     });
   }); //cancel the original download
